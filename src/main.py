@@ -1,19 +1,36 @@
 from typing import Union
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel
+from typing import List
+import matplotlib.pyplot as plt
+import io
+import base64
+from fastapi.middleware.cors import CORSMiddleware
+import numpy as np
 
 app = FastAPI()
+# Configurar CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # En producción, especifica los orígenes permitidos
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
+class CircleInput(BaseModel):
+    radii: list[float]
 
-@app.get("/")
-def read_root():
-    return {"Hello": "World"}
+from caja_anchomin import grafc 
 
-
-@app.get("/items/{item_id}")
-def read_item(item_id: int, q: Union[str, None] = None):
-    return {"item_id": item_id, "q": q}
-
+@app.post("/api/calculate-circles")
+async def calculate_circles(input: CircleInput):
+    try:    
+        image = grafc(input.radii)
+        return image
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"An error occurred: {str(e)}")
 
 @app.get("/healthz/")
 def health_check_endpoint():
